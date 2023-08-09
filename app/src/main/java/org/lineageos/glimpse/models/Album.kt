@@ -18,12 +18,14 @@ data class Album(
     val id: Int,
     val name: String,
     val thumbnail: Uri,
+    val thumbnailId: Long,
     var size: Int = 0,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readInt(),
         parcel.readString()!!,
         parcel.readParcelable(Uri::class)!!,
+        parcel.readLong(),
         parcel.readInt()
     )
 
@@ -35,6 +37,7 @@ data class Album(
             { it.id },
             { it.name },
             { it.thumbnail },
+            { it.thumbnailId },
             { it.size },
         ) == 0
     }
@@ -47,6 +50,7 @@ data class Album(
         dest.writeInt(id)
         dest.writeString(name)
         dest.writeParcelable(thumbnail, 0)
+        dest.writeLong(thumbnailId)
         dest.writeInt(size)
     }
 

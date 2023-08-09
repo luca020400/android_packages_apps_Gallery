@@ -87,6 +87,7 @@ class AlbumsFlow(private val context: Context) : QueryFlow<Album>() {
                         this[bucketId]?.also { album ->
                             album.size += 1
                         } ?: run {
+                                val thumbnailId = it.getLong(idIndex)
                                 this[bucketId] = Album(
                                     bucketId,
                                     when (bucketId) {
@@ -100,7 +101,8 @@ class AlbumsFlow(private val context: Context) : QueryFlow<Album>() {
 
                                         else -> it.getString(bucketDisplayNameIndex) ?: Build.MODEL
                                     },
-                                    ContentUris.withAppendedId(contentUri, it.getLong(idIndex)),
+                                    ContentUris.withAppendedId(contentUri, thumbnailId),
+                                    thumbnailId,
                                 ).apply { size += 1 }
                             }
                         }

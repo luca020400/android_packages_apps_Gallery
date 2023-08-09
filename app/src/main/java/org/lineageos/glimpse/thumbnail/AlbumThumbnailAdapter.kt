@@ -76,6 +76,7 @@ class AlbumThumbnailAdapter(
             )
 
             thumbnailImageView.load(album.thumbnail) {
+                memoryCacheKey("thumbnail_${album.thumbnailId}")
                 size(ThumbnailLayoutManager.MAX_THUMBNAIL_SIZE.px)
                 placeholder(R.drawable.thumbnail_placeholder)
             }
