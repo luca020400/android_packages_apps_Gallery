@@ -9,6 +9,7 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
@@ -28,6 +29,8 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.navigation.fragment.findNavController
+import androidx.transition.Transition
+import androidx.transition.TransitionInflater
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -55,6 +58,7 @@ class MediaViewerFragment : Fragment(R.layout.fragment_media_viewer) {
     // Views
     private val adjustButton by getViewProperty<ImageButton>(R.id.adjustButton)
     private val backButton by getViewProperty<ImageButton>(R.id.backButton)
+    private val constraintLayout by getViewProperty<ConstraintLayout>(R.id.constraintLayout)
     private val bottomSheetLinearLayout by getViewProperty<LinearLayout>(R.id.bottomSheetLinearLayout)
     private val dateTextView by getViewProperty<TextView>(R.id.dateTextView)
     private val deleteButton by getViewProperty<ImageButton>(R.id.deleteButton)
@@ -94,12 +98,18 @@ class MediaViewerFragment : Fragment(R.layout.fragment_media_viewer) {
     }
 
     // Adapter
+    private val startPostponedEnterTransitionUnit = { startPostponedEnterTransition() }
     private val mediaViewerAdapter by lazy {
-        MediaViewerAdapter(exoPlayer, mediaViewModel.mediaPositionLiveData)
+        MediaViewerAdapter(
+            exoPlayer,
+            mediaViewModel.mediaPositionLiveData,
+            startPostponedEnterTransitionUnit
+        )
     }
 
     // Arguments
     private val album by lazy { arguments?.getParcelable(KEY_ALBUM, Album::class) }
+    private val media by lazy { arguments?.getParcelable(KEY_MEDIA, Media::class) }
 
     // Contracts
     private val deleteUriContract =
@@ -199,10 +209,45 @@ class MediaViewerFragment : Fragment(R.layout.fragment_media_viewer) {
         }
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        sharedElementEnterTransition =
+            TransitionInflater.from(requireContext()).inflateTransition(R.transition.shared_image)
+                .apply {
+                    addListener(object : Transition.TransitionListener {
+                        override fun onTransitionStart(transition: Transition) {
+                            arrayOf(
+                                constraintLayout,
+                                bottomSheetLinearLayout,
+                                topSheetConstraintLayout
+                            ).forEach {
+                                it.alpha = 0f
+                                it.animate()
+                                    .alpha(1f)
+                            }
+                        }
+
+                        override fun onTransitionEnd(transition: Transition) {}
+                        override fun onTransitionCancel(transition: Transition) {}
+                        override fun onTransitionPause(transition: Transition) {}
+                        override fun onTransitionResume(transition: Transition) {}
+                    })
+                }
+    }
+
     override fun onResume() {
         super.onResume()
 
         exoPlayer.play()
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        postponeEnterTransition()
+        return super.onCreateView(inflater, container, savedInstanceState)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -300,6 +345,9 @@ class MediaViewerFragment : Fragment(R.layout.fragment_media_viewer) {
         if (!permissionsUtils.mainPermissionsGranted()) {
             mainPermissionsRequestLauncher.launch(PermissionsUtils.mainPermissions)
         } else {
+            media?.let {
+                mediaViewerAdapter.data = arrayOf(it)
+            }
             viewLifecycleOwner.lifecycleScope.launch {
                 mediaViewModel.setBucketId(album?.id)
                 mediaViewModel.mediaForAlbum.collect(::initData)

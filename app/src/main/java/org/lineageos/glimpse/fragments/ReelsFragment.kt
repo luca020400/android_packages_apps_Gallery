@@ -19,6 +19,7 @@ import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.launch
@@ -70,12 +71,17 @@ class ReelsFragment : Fragment(R.layout.fragment_reels) {
 
     // MediaStore
     private val thumbnailAdapter by lazy {
-        ThumbnailAdapter { media, position ->
+        ThumbnailAdapter { media, position, anchor ->
+            val extras = FragmentNavigatorExtras(
+                anchor to "${media.id}"
+            )
             parentNavController.navigate(
                 R.id.action_mainFragment_to_mediaViewerFragment,
                 MediaViewerFragment.createBundle(
                     null, media, position
-                )
+                ),
+                null,
+                extras
             )
         }
     }

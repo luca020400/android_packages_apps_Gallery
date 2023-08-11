@@ -19,6 +19,7 @@ import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
@@ -74,12 +75,17 @@ class AlbumFragment : Fragment(R.layout.fragment_album) {
 
     // MediaStore
     private val thumbnailAdapter by lazy {
-        ThumbnailAdapter { media, position ->
+        ThumbnailAdapter { media, position, anchor ->
+            val extras = FragmentNavigatorExtras(
+                anchor to "${media.id}"
+            )
             findNavController().navigate(
                 R.id.action_albumFragment_to_mediaViewerFragment,
                 MediaViewerFragment.createBundle(
                     album, media, position
-                )
+                ),
+                null,
+                extras
             )
         }
     }

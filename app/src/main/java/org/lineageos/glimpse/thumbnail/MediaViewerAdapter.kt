@@ -23,6 +23,7 @@ import org.lineageos.glimpse.models.MediaType
 class MediaViewerAdapter(
     private val exoPlayer: ExoPlayer,
     private val currentPositionLiveData: LiveData<Int>,
+    private val startPostponedEnterTransitionUnit: () -> Unit,
 ) : RecyclerView.Adapter<MediaViewerAdapter.MediaViewHolder>() {
     var data: Array<Media> = arrayOf()
         set(value) {
@@ -47,7 +48,7 @@ class MediaViewerAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = MediaViewHolder(
         LayoutInflater.from(parent.context).inflate(R.layout.media_view, parent, false),
-        exoPlayer, currentPositionLiveData,
+        exoPlayer, currentPositionLiveData, startPostponedEnterTransitionUnit
     )
 
     override fun onBindViewHolder(holder: MediaViewHolder, position: Int) {
@@ -70,6 +71,7 @@ class MediaViewerAdapter(
         private val view: View,
         private val exoPlayer: ExoPlayer,
         private val currentPositionLiveData: LiveData<Int>,
+        private val startPostponedEnterTransitionUnit: () -> Unit,
     ) : RecyclerView.ViewHolder(view) {
         // Views
         private val imageView = view.findViewById<ImageView>(R.id.imageView)
@@ -93,8 +95,10 @@ class MediaViewerAdapter(
         fun bind(media: Media, position: Int) {
             this.media = media
             this.position = position
+            imageView.transitionName = "${media.id}"
             imageView.load(media.externalContentUri) {
                 memoryCacheKey("full_${media.id}")
+                startPostponedEnterTransitionUnit()
             }
         }
 

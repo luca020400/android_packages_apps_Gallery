@@ -23,7 +23,7 @@ import java.time.temporal.ChronoUnit
 import java.util.Date
 
 class ThumbnailAdapter(
-    private val onItemSelected: (media: Media, position: Int) -> Unit,
+    private val onItemSelected: (media: Media, position: Int, anchor: View) -> Unit,
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private val headersPositions = sortedSetOf<Int>()
 
@@ -128,27 +128,26 @@ class ThumbnailAdapter(
     }
 
     class ThumbnailViewHolder(
-        private val view: View,
-        private val onItemSelected: (media: Media, position: Int) -> Unit,
-    ) : RecyclerView.ViewHolder(view) {
+        itemView: View,
+        private val onItemSelected: (media: Media, position: Int, anchor: View) -> Unit,
+    ) : RecyclerView.ViewHolder(itemView) {
         // Views
         private val videoOverlayImageView =
-            view.findViewById<ImageView>(R.id.videoOverlayImageView)!!
-        private val thumbnailImageView = view.findViewById<ImageView>(R.id.thumbnailImageView)!!
+            itemView.findViewById<ImageView>(R.id.videoOverlayImageView)!!
+        private val thumbnailImageView = itemView.findViewById<ImageView>(R.id.thumbnailImageView)!!
 
         private lateinit var media: Media
         private var position = -1
-
-        init {
-            view.setOnClickListener {
-                onItemSelected(media, position)
-            }
-        }
 
         fun bind(media: Media, position: Int) {
             this.media = media
             this.position = position
 
+            itemView.setOnClickListener {
+                onItemSelected(media, position, thumbnailImageView)
+            }
+
+            thumbnailImageView.transitionName = "${media.id}"
             thumbnailImageView.load(media.externalContentUri) {
                 memoryCacheKey("thumbnail_${media.id}")
                 size(ThumbnailLayoutManager.MAX_THUMBNAIL_SIZE.px)
