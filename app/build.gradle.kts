@@ -10,6 +10,7 @@ import groovy.xml.XmlParser
 plugins {
     id("com.android.application")
     id("kotlin-android")
+    id("kotlin-kapt")
 }
 
 android {
@@ -73,10 +74,9 @@ dependencies {
     implementation("androidx.navigation:navigation-fragment-ktx:2.6.0")
     implementation("androidx.navigation:navigation-ui-ktx:2.6.0")
 
-    // Coil
-    implementation("io.coil-kt:coil:2.2.2")
-    implementation("io.coil-kt:coil-gif:2.2.2")
-    implementation("io.coil-kt:coil-video:2.2.2")
+    // Glide
+    implementation("com.github.bumptech.glide:glide:4.15.1")
+    kapt("com.github.bumptech.glide:compiler:4.15.1")
 }
 
 tasks.register("generateBp") {

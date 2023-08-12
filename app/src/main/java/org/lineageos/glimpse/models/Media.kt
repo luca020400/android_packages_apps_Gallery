@@ -11,6 +11,7 @@ import android.content.ContentValues
 import android.os.Parcel
 import android.os.Parcelable
 import android.provider.MediaStore
+import com.bumptech.glide.signature.MediaStoreSignature
 import java.util.Date
 import kotlin.reflect.safeCast
 
@@ -91,6 +92,8 @@ data class Media(
             put(MediaStore.MediaColumns.IS_TRASHED, value)
         }, null, null)
     }
+
+    fun signature() = MediaStoreSignature(mimeType, dateModified.time * 1000, orientation)
 
     companion object CREATOR : Parcelable.Creator<Media> {
         override fun createFromParcel(parcel: Parcel) = Media(parcel)

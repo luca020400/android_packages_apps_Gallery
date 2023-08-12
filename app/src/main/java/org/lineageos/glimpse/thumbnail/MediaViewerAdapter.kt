@@ -15,8 +15,8 @@ import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
-import coil.load
 import org.lineageos.glimpse.R
+import org.lineageos.glimpse.ext.load
 import org.lineageos.glimpse.models.Media
 import org.lineageos.glimpse.models.MediaType
 
@@ -96,8 +96,7 @@ class MediaViewerAdapter(
             this.media = media
             this.position = position
             imageView.transitionName = "${media.id}"
-            imageView.load(media.externalContentUri) {
-                memoryCacheKey("full_${media.id}")
+            imageView.load(media) {
                 startPostponedEnterTransitionUnit()
             }
         }
