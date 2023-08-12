@@ -21,6 +21,8 @@ data class Media(
     val mediaType: MediaType,
     val mimeType: String,
     val dateAdded: Date,
+    val dateModified: Date,
+    val orientation: Int
 ) : Parcelable {
     val externalContentUri = ContentUris.withAppendedId(mediaType.externalContentUri, id)
 
@@ -36,6 +38,8 @@ data class Media(
         },
         parcel.readString()!!,
         Date(parcel.readLong()),
+        Date(parcel.readLong()),
+        parcel.readInt(),
     )
 
     override fun describeContents() = 0
@@ -48,6 +52,8 @@ data class Media(
         dest.writeInt(mediaType.ordinal)
         dest.writeString(mimeType)
         dest.writeLong(dateAdded.time)
+        dest.writeLong(dateModified.time)
+        dest.writeInt(orientation)
     }
 
     fun delete(contentResolver: ContentResolver) {
@@ -79,6 +85,8 @@ data class Media(
             mediaType: Int,
             mimeType: String,
             dateAdded: Long,
+            dateModified: Long,
+            orientation: Int,
         ) = Media(
             id,
             bucketId,
@@ -87,6 +95,8 @@ data class Media(
             MediaType.fromMediaStoreValue(mediaType),
             mimeType,
             Date(dateAdded * 1000),
+            Date(dateModified * 1000),
+            orientation,
         )
     }
 }

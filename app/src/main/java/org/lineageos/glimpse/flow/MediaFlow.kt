@@ -75,12 +75,14 @@ class MediaFlow(private val context: Context, private val bucketId: Int?) :
 
     override fun flowData() = flowCursor().mapEachRow {
         val idIndex = it.getColumnIndex(MediaStore.Files.FileColumns._ID)
+        val bucketIdIndex = it.getColumnIndex(MediaStore.MediaColumns.BUCKET_ID)
         val isFavoriteIndex = it.getColumnIndex(MediaStore.Files.FileColumns.IS_FAVORITE)
         val isTrashedIndex = it.getColumnIndex(MediaStore.Files.FileColumns.IS_TRASHED)
         val mediaTypeIndex = it.getColumnIndex(MediaStore.Files.FileColumns.MEDIA_TYPE)
         val mimeTypeIndex = it.getColumnIndex(MediaStore.Files.FileColumns.MIME_TYPE)
         val dateAddedIndex = it.getColumnIndex(MediaStore.Files.FileColumns.DATE_ADDED)
-        val bucketIdIndex = it.getColumnIndex(MediaStore.MediaColumns.BUCKET_ID)
+        val dateModifiedIndex = it.getColumnIndex(MediaStore.Files.FileColumns.DATE_MODIFIED)
+        val orientationIndex = it.getColumnIndex(MediaStore.Files.FileColumns.ORIENTATION)
 
         val id = it.getLong(idIndex)
         val buckedId = it.getInt(bucketIdIndex)
@@ -89,6 +91,8 @@ class MediaFlow(private val context: Context, private val bucketId: Int?) :
         val mediaType = it.getInt(mediaTypeIndex)
         val mimeType = it.getString(mimeTypeIndex)
         val dateAdded = it.getLong(dateAddedIndex)
+        val dateModified = it.getLong(dateModifiedIndex)
+        val orientation = it.getInt(orientationIndex)
 
         Media.fromMediaStore(
             id,
@@ -98,6 +102,8 @@ class MediaFlow(private val context: Context, private val bucketId: Int?) :
             mediaType,
             mimeType,
             dateAdded,
+            dateModified,
+            orientation,
         )
         }
 }
