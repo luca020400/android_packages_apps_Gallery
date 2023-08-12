@@ -6,18 +6,19 @@
 package org.lineageos.glimpse.flow
 
 import android.content.ContentResolver
-import android.content.ContentUris
 import android.content.Context
 import android.database.Cursor
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import androidx.core.database.getStringOrNull
 import androidx.core.os.bundleOf
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.lineageos.glimpse.R
 import org.lineageos.glimpse.ext.queryFlow
 import org.lineageos.glimpse.models.Album
+import org.lineageos.glimpse.models.Media
 import org.lineageos.glimpse.query.*
 import org.lineageos.glimpse.utils.MediaStoreBuckets
 
@@ -51,35 +52,42 @@ class AlbumsFlow(private val context: Context) : QueryFlow<Album>() {
     override fun flowData() = flowCursor().map {
         mutableMapOf<Int, Album>().apply {
             it?.use {
-                val idIndex = it.getColumnIndex(MediaStore.Files.FileColumns._ID)
-                val isFavoriteIndex =
-                    it.getColumnIndex(MediaStore.Files.FileColumns.IS_FAVORITE)
-                val isTrashedIndex = it.getColumnIndex(MediaStore.Files.FileColumns.IS_TRASHED)
-                val mediaTypeIndex = it.getColumnIndex(MediaStore.Files.FileColumns.MEDIA_TYPE)
-                val bucketIdIndex = it.getColumnIndex(MediaStore.Files.FileColumns.BUCKET_ID)
                 val bucketDisplayNameIndex =
                     it.getColumnIndex(MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME)
+                val idIndex = it.getColumnIndex(MediaStore.Files.FileColumns._ID)
+                val bucketIdIndex = it.getColumnIndex(MediaStore.MediaColumns.BUCKET_ID)
+                val isFavoriteIndex = it.getColumnIndex(MediaStore.Files.FileColumns.IS_FAVORITE)
+                val isTrashedIndex = it.getColumnIndex(MediaStore.Files.FileColumns.IS_TRASHED)
+                val mediaTypeIndex = it.getColumnIndex(MediaStore.Files.FileColumns.MEDIA_TYPE)
+                val mimeTypeIndex = it.getColumnIndex(MediaStore.Files.FileColumns.MIME_TYPE)
+                val dateAddedIndex = it.getColumnIndex(MediaStore.Files.FileColumns.DATE_ADDED)
+                val dateModifiedIndex =
+                    it.getColumnIndex(MediaStore.Files.FileColumns.DATE_MODIFIED)
+                val orientationIndex = it.getColumnIndex(MediaStore.Files.FileColumns.ORIENTATION)
 
                 if (!it.moveToFirst()) {
                     return@use
                 }
 
                 while (!it.isAfterLast) {
-                    val contentUri = when (it.getInt(mediaTypeIndex)) {
-                        MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-
-                        MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-
-                        else -> continue
-                    }
+                    val bucketDisplayName = it.getStringOrNull(bucketDisplayNameIndex)
+                    val id = it.getLong(idIndex)
+                    val buckedId = it.getInt(bucketIdIndex)
+                    val isFavorite = it.getInt(isFavoriteIndex)
+                    val isTrashed = it.getInt(isTrashedIndex)
+                    val mediaType = it.getInt(mediaTypeIndex)
+                    val mimeType = it.getString(mimeTypeIndex)
+                    val dateAdded = it.getLong(dateAddedIndex)
+                    val dateModified = it.getLong(dateModifiedIndex)
+                    val orientation = it.getInt(orientationIndex)
 
                     val bucketIds = listOfNotNull(
-                        when (it.getInt(isTrashedIndex)) {
+                        when (isTrashed) {
                             1 -> MediaStoreBuckets.MEDIA_STORE_BUCKET_TRASH.id
-                            else -> it.getInt(bucketIdIndex)
+                            else -> buckedId
                         },
                         MediaStoreBuckets.MEDIA_STORE_BUCKET_FAVORITES.id.takeIf { _ ->
-                            it.getInt(isFavoriteIndex) == 1
+                            isFavorite == 1
                         },
                     )
 
@@ -87,27 +95,35 @@ class AlbumsFlow(private val context: Context) : QueryFlow<Album>() {
                         this[bucketId]?.also { album ->
                             album.size += 1
                         } ?: run {
-                                val thumbnailId = it.getLong(idIndex)
-                                this[bucketId] = Album(
-                                    bucketId,
-                                    when (bucketId) {
-                                        MediaStoreBuckets.MEDIA_STORE_BUCKET_FAVORITES.id -> context.getString(
-                                            R.string.album_favorites
-                                        )
+                            this[bucketId] = Album(
+                                bucketId,
+                                when (bucketId) {
+                                    MediaStoreBuckets.MEDIA_STORE_BUCKET_FAVORITES.id -> context.getString(
+                                        R.string.album_favorites
+                                    )
 
-                                        MediaStoreBuckets.MEDIA_STORE_BUCKET_TRASH.id -> context.getString(
-                                            R.string.album_trash
-                                        )
+                                    MediaStoreBuckets.MEDIA_STORE_BUCKET_TRASH.id -> context.getString(
+                                        R.string.album_trash
+                                    )
 
-                                        else -> it.getString(bucketDisplayNameIndex) ?: Build.MODEL
-                                    },
-                                    ContentUris.withAppendedId(contentUri, thumbnailId),
-                                    thumbnailId,
-                                ).apply { size += 1 }
-                            }
+                                    else -> bucketDisplayName ?: Build.MODEL
+                                },
+                                Media.fromMediaStore(
+                                    id,
+                                    buckedId,
+                                    isFavorite,
+                                    isTrashed,
+                                    mediaType,
+                                    mimeType,
+                                    dateAdded,
+                                    dateModified,
+                                    orientation,
+                                )
+                            ).apply { size += 1 }
                         }
-                        it.moveToNext()
                     }
+                    it.moveToNext()
+                }
                 }
             }.values.toList()
         }

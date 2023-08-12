@@ -5,7 +5,6 @@
 
 package org.lineageos.glimpse.models
 
-import android.net.Uri
 import android.os.Parcel
 import android.os.Parcelable
 import org.lineageos.glimpse.ext.*
@@ -17,15 +16,13 @@ import kotlin.reflect.safeCast
 data class Album(
     val id: Int,
     val name: String,
-    val thumbnail: Uri,
-    val thumbnailId: Long,
+    val media: Media,
     var size: Int = 0,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readInt(),
         parcel.readString()!!,
-        parcel.readParcelable(Uri::class)!!,
-        parcel.readLong(),
+        parcel.readParcelable(Media::class)!!,
         parcel.readInt()
     )
 
@@ -36,8 +33,7 @@ data class Album(
             obj,
             { it.id },
             { it.name },
-            { it.thumbnail },
-            { it.thumbnailId },
+            { it.media },
             { it.size },
         ) == 0
     }
@@ -49,8 +45,7 @@ data class Album(
     override fun writeToParcel(dest: Parcel, flags: Int) {
         dest.writeInt(id)
         dest.writeString(name)
-        dest.writeParcelable(thumbnail, 0)
-        dest.writeLong(thumbnailId)
+        dest.writeParcelable(media, 0)
         dest.writeInt(size)
     }
 
