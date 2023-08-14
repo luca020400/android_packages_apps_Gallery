@@ -65,6 +65,8 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.preference:preference:1.2.1")
     implementation("com.google.android.material:material:1.9.0")
+    implementation("androidx.paging:paging-common-ktx:3.2.0")
+    implementation("androidx.paging:paging-runtime-ktx:3.2.0")
 
     // Media3
     implementation("androidx.media3:media3-exoplayer:1.1.0")
