@@ -14,6 +14,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.RecyclerView
 import org.lineageos.glimpse.R
 import org.lineageos.glimpse.ext.load
@@ -24,35 +25,14 @@ class MediaViewerAdapter(
     private val exoPlayer: ExoPlayer,
     private val currentPositionLiveData: LiveData<Int>,
     private val startPostponedEnterTransitionUnit: () -> Unit,
-) : RecyclerView.Adapter<MediaViewerAdapter.MediaViewHolder>() {
-    var data: Array<Media> = arrayOf()
-        set(value) {
-            if (value.contentEquals(field)) {
-                return
-            }
-
-            field = value
-
-            field.let {
-                @Suppress("NotifyDataSetChanged") notifyDataSetChanged()
-            }
-        }
-
-    init {
-        setHasStableIds(true)
-    }
-
-    override fun getItemCount() = data.size
-
-    override fun getItemId(position: Int) = data[position].id
-
+) : PagingDataAdapter<Media, MediaViewerAdapter.MediaViewHolder>(Media.comparator) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = MediaViewHolder(
         LayoutInflater.from(parent.context).inflate(R.layout.media_view, parent, false),
         exoPlayer, currentPositionLiveData, startPostponedEnterTransitionUnit
     )
 
     override fun onBindViewHolder(holder: MediaViewHolder, position: Int) {
-        holder.bind(data[position], position)
+        holder.bind(getItem(position)!!, position)
     }
 
     override fun onViewAttachedToWindow(holder: MediaViewHolder) {
@@ -65,7 +45,7 @@ class MediaViewerAdapter(
         holder.onViewDetachedFromWindow()
     }
 
-    fun getItemAtPosition(position: Int) = data[position]
+    fun getItemAtPosition(position: Int) = getItem(position)!!
 
     class MediaViewHolder(
         private val view: View,

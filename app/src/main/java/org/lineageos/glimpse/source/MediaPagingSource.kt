@@ -8,7 +8,9 @@ import android.provider.MediaStore
 import androidx.core.os.bundleOf
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import kotlinx.coroutines.flow.collectLatest
 import org.lineageos.glimpse.ext.mapEachRow
+import org.lineageos.glimpse.ext.uriFlow
 import org.lineageos.glimpse.models.Media
 import org.lineageos.glimpse.query.*
 import org.lineageos.glimpse.utils.MediaStoreBuckets
@@ -17,6 +19,7 @@ class MediaPagingSource(
     private val contentResolver: ContentResolver,
     private val bucketId: Int?
 ) : PagingSource<Int, Media>() {
+
     override fun getRefreshKey(state: PagingState<Int, Media>) =
         state.anchorPosition?.let { anchorPosition ->
             val anchorPageIndex = state.pages.indexOf(state.closestPageToPosition(anchorPosition))
@@ -82,15 +85,15 @@ class MediaPagingSource(
         )
 
         val data = mediaFromCursor(cursor)
-        val prevKey = if (offset > 0) offset - limit else null
-        val nextKey = if (data.size >= params.loadSize) offset + data.size else null
+        val prevKey = null
+        val nextKey = if (data.isNotEmpty()) offset + data.size else null
 
         println("MERDA size ${data.size}, prev $prevKey, next $nextKey, limit ${params.loadSize} offset ${(params.key ?: 0)}")
 
         return LoadResult.Page(
             data = data,
             prevKey = prevKey,
-            nextKey = nextKey
+            nextKey = nextKey,
         )
     }
 

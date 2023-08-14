@@ -13,7 +13,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.paging.PagingDataAdapter
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import org.lineageos.glimpse.R
 import org.lineageos.glimpse.ext.load
@@ -23,15 +22,9 @@ import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.util.Date
 
-val MEDIA_COMPARATOR = object : DiffUtil.ItemCallback<Media>() {
-    override fun areItemsTheSame(oldItem: Media, newItem: Media) = oldItem.id == newItem.id
-    override fun areContentsTheSame(oldItem: Media, newItem: Media) =
-        oldItem.compareTo(newItem) == 0
-}
-
 class ThumbnailPagingAdapter(
     private val onItemSelected: (media: Media, position: Int, anchor: View) -> Unit,
-) : PagingDataAdapter<Media, RecyclerView.ViewHolder>(MEDIA_COMPARATOR) {
+) : PagingDataAdapter<Media, RecyclerView.ViewHolder>(Media.comparator) {
     private val headersPositions = sortedSetOf<Int>()
 
     //override fun getItemCount() = super.getItemCount().takeIf { it > 0 }

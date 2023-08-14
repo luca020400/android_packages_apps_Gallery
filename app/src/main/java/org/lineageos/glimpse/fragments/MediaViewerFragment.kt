@@ -29,21 +29,29 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.navigation.fragment.findNavController
+import androidx.paging.PagingData
 import androidx.transition.Transition
 import androidx.transition.TransitionInflater
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.lineageos.glimpse.R
-import org.lineageos.glimpse.ext.*
+import org.lineageos.glimpse.ext.createDeleteRequest
+import org.lineageos.glimpse.ext.createFavoriteRequest
+import org.lineageos.glimpse.ext.createTrashRequest
+import org.lineageos.glimpse.ext.editIntent
+import org.lineageos.glimpse.ext.getParcelable
+import org.lineageos.glimpse.ext.getViewProperty
+import org.lineageos.glimpse.ext.shareIntent
 import org.lineageos.glimpse.models.Album
 import org.lineageos.glimpse.models.Media
 import org.lineageos.glimpse.models.MediaType
 import org.lineageos.glimpse.thumbnail.MediaViewerAdapter
 import org.lineageos.glimpse.utils.PermissionsUtils
-import org.lineageos.glimpse.viewmodels.MediaViewModel
+import org.lineageos.glimpse.viewmodels.PagedMediaViewModel
 import java.text.SimpleDateFormat
 
 /**
@@ -53,7 +61,11 @@ import java.text.SimpleDateFormat
  */
 class MediaViewerFragment : Fragment(R.layout.fragment_media_viewer) {
     // View models
-    private val mediaViewModel: MediaViewModel by viewModels { MediaViewModel.Factory }
+    private val pagedMediaViewModel: PagedMediaViewModel by viewModels {
+        PagedMediaViewModel.factory(
+            album?.id
+        )
+    }
 
     // Views
     private val adjustButton by getViewProperty<ImageButton>(R.id.adjustButton)
@@ -83,9 +95,12 @@ class MediaViewerFragment : Fragment(R.layout.fragment_media_viewer) {
                 requireActivity().finish()
             } else {
                 viewLifecycleOwner.lifecycleScope.launch {
-                    mediaViewModel.setBucketId(album?.id)
-                    mediaViewModel.mediaForAlbum.collect(::initData)
+                    pagedMediaViewModel.pagingFlow.collectLatest { pagingData ->
+                        mediaViewerAdapter.submitData(pagingData)
+                    }
                 }
+                viewPager.setCurrentItem(pagedMediaViewModel.mediaPosition, false)
+                onPageChangeCallback.onPageSelected(pagedMediaViewModel.mediaPosition)
             }
         }
     }
@@ -102,7 +117,7 @@ class MediaViewerFragment : Fragment(R.layout.fragment_media_viewer) {
     private val mediaViewerAdapter by lazy {
         MediaViewerAdapter(
             exoPlayer,
-            mediaViewModel.mediaPositionLiveData,
+            pagedMediaViewModel.mediaPositionLiveData,
             startPostponedEnterTransitionUnit
         )
     }
@@ -184,7 +199,7 @@ class MediaViewerFragment : Fragment(R.layout.fragment_media_viewer) {
                 return
             }
 
-            this@MediaViewerFragment.mediaViewModel.mediaPosition = position
+            this@MediaViewerFragment.pagedMediaViewModel.mediaPosition = position
 
             val media = mediaViewerAdapter.getItemAtPosition(position)
 
@@ -253,7 +268,7 @@ class MediaViewerFragment : Fragment(R.layout.fragment_media_viewer) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        mediaViewModel.mediaPosition = arguments?.getInt(KEY_POSITION, -1)!!
+        pagedMediaViewModel.mediaPosition = arguments?.getInt(KEY_POSITION, -1)!!
 
         backButton.setOnClickListener {
             findNavController().popBackStack()
@@ -345,13 +360,13 @@ class MediaViewerFragment : Fragment(R.layout.fragment_media_viewer) {
         if (!permissionsUtils.mainPermissionsGranted()) {
             mainPermissionsRequestLauncher.launch(PermissionsUtils.mainPermissions)
         } else {
-            media?.let {
-                mediaViewerAdapter.data = arrayOf(it)
-            }
             viewLifecycleOwner.lifecycleScope.launch {
-                mediaViewModel.setBucketId(album?.id)
-                mediaViewModel.mediaForAlbum.collect(::initData)
+                pagedMediaViewModel.pagingFlow.collectLatest { pagingData ->
+                    mediaViewerAdapter.submitData(pagingData)
+                }
             }
+            viewPager.setCurrentItem(pagedMediaViewModel.mediaPosition, false)
+            onPageChangeCallback.onPageSelected(pagedMediaViewModel.mediaPosition)
         }
     }
 
@@ -393,12 +408,6 @@ class MediaViewerFragment : Fragment(R.layout.fragment_media_viewer) {
         } else {
             media.trash(requireContext().contentResolver, trash)
         }
-    }
-
-    private fun initData(data: List<Media>) {
-        mediaViewerAdapter.data = data.toTypedArray()
-        viewPager.setCurrentItem(mediaViewModel.mediaPosition, false)
-        onPageChangeCallback.onPageSelected(mediaViewModel.mediaPosition)
     }
 
     companion object {

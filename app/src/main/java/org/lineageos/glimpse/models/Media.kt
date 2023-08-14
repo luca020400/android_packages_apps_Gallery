@@ -11,6 +11,7 @@ import android.content.ContentValues
 import android.os.Parcel
 import android.os.Parcelable
 import android.provider.MediaStore
+import androidx.recyclerview.widget.DiffUtil
 import com.bumptech.glide.signature.MediaStoreSignature
 import java.util.Date
 import kotlin.reflect.safeCast
@@ -96,6 +97,12 @@ data class Media(
     fun signature() = MediaStoreSignature(mimeType, dateModified.time * 1000, orientation)
 
     companion object CREATOR : Parcelable.Creator<Media> {
+        val comparator = object : DiffUtil.ItemCallback<Media>() {
+            override fun areItemsTheSame(oldItem: Media, newItem: Media) = oldItem.id == newItem.id
+            override fun areContentsTheSame(oldItem: Media, newItem: Media) =
+                oldItem.compareTo(newItem) == 0
+        }
+
         override fun createFromParcel(parcel: Parcel) = Media(parcel)
 
         override fun newArray(size: Int) = arrayOfNulls<Media>(size)
