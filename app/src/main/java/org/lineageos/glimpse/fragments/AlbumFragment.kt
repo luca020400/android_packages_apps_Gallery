@@ -27,15 +27,16 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.shape.MaterialShapeDrawable
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.lineageos.glimpse.R
 import org.lineageos.glimpse.ext.getParcelable
 import org.lineageos.glimpse.ext.getViewProperty
 import org.lineageos.glimpse.models.Album
-import org.lineageos.glimpse.thumbnail.ThumbnailAdapter
-import org.lineageos.glimpse.thumbnail.ThumbnailLayoutManager
+import org.lineageos.glimpse.thumbnail.ThumbnailPagingAdapter
+import org.lineageos.glimpse.thumbnail.ThumbnailPagingLayoutManager
 import org.lineageos.glimpse.utils.PermissionsUtils
-import org.lineageos.glimpse.viewmodels.MediaViewModel
+import org.lineageos.glimpse.viewmodels.PagedMediaViewModel
 
 /**
  * A fragment showing a list of media from a specific album with thumbnails.
@@ -44,7 +45,11 @@ import org.lineageos.glimpse.viewmodels.MediaViewModel
  */
 class AlbumFragment : Fragment(R.layout.fragment_album) {
     // View models
-    private val mediaViewModel: MediaViewModel by viewModels { MediaViewModel.Factory }
+    private val pagedMediaViewModel: PagedMediaViewModel by viewModels {
+        PagedMediaViewModel.factory(
+            album.id
+        )
+    }
 
     // Views
     private val albumRecyclerView by getViewProperty<RecyclerView>(R.id.albumRecyclerView)
@@ -64,9 +69,8 @@ class AlbumFragment : Fragment(R.layout.fragment_album) {
                 requireActivity().finish()
             } else {
                 viewLifecycleOwner.lifecycleScope.launch {
-                    mediaViewModel.setBucketId(album.id)
-                    mediaViewModel.mediaForAlbum.collect { data ->
-                        thumbnailAdapter.data = data.toTypedArray()
+                    pagedMediaViewModel.pagingFlow.collectLatest { pagingData ->
+                        thumbnailAdapter.submitData(pagingData)
                     }
                 }
             }
@@ -75,7 +79,7 @@ class AlbumFragment : Fragment(R.layout.fragment_album) {
 
     // MediaStore
     private val thumbnailAdapter by lazy {
-        ThumbnailAdapter { media, position, anchor ->
+        ThumbnailPagingAdapter { media, position, anchor ->
             val extras = FragmentNavigatorExtras(
                 anchor to "${media.id}"
             )
@@ -106,7 +110,7 @@ class AlbumFragment : Fragment(R.layout.fragment_album) {
         val appBarConfiguration = AppBarConfiguration(navController.graph)
         toolbar.setupWithNavController(navController, appBarConfiguration)
 
-        albumRecyclerView.layoutManager = ThumbnailLayoutManager(
+        albumRecyclerView.layoutManager = ThumbnailPagingLayoutManager(
             requireContext(), thumbnailAdapter
         )
         albumRecyclerView.adapter = thumbnailAdapter
@@ -126,10 +130,9 @@ class AlbumFragment : Fragment(R.layout.fragment_album) {
         if (!permissionsUtils.mainPermissionsGranted()) {
             mainPermissionsRequestLauncher.launch(PermissionsUtils.mainPermissions)
         } else {
-            mediaViewModel.setBucketId(album.id)
             viewLifecycleOwner.lifecycleScope.launch {
-                mediaViewModel.mediaForAlbum.collect { data ->
-                    thumbnailAdapter.data = data.toTypedArray()
+                pagedMediaViewModel.pagingFlow.collectLatest { pagingData ->
+                    thumbnailAdapter.submitData(pagingData)
                 }
             }
         }
@@ -138,7 +141,7 @@ class AlbumFragment : Fragment(R.layout.fragment_album) {
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
 
-        albumRecyclerView.layoutManager = ThumbnailLayoutManager(
+        albumRecyclerView.layoutManager = ThumbnailPagingLayoutManager(
             requireContext(), thumbnailAdapter
         )
     }

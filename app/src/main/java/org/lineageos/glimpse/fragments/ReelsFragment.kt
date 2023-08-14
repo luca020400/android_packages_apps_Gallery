@@ -38,7 +38,7 @@ import org.lineageos.glimpse.viewmodels.PagedMediaViewModel
  */
 class ReelsFragment : Fragment(R.layout.fragment_reels) {
     // View models
-    private val pagedMediaViewModel: PagedMediaViewModel by viewModels { PagedMediaViewModel.Factory }
+    private val pagedMediaViewModel: PagedMediaViewModel by viewModels { PagedMediaViewModel.factory() }
 
     // Views
     private val reelsRecyclerView by getViewProperty<RecyclerView>(R.id.reelsRecyclerView)
