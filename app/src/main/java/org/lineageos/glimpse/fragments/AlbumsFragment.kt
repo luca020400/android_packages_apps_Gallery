@@ -27,7 +27,7 @@ import com.google.android.material.shape.MaterialShapeDrawable
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.lineageos.glimpse.R
-import org.lineageos.glimpse.ext.*
+import org.lineageos.glimpse.ext.getViewProperty
 import org.lineageos.glimpse.recyclerview.AlbumThumbnailAdapter
 import org.lineageos.glimpse.recyclerview.AlbumThumbnailLayoutManager
 import org.lineageos.glimpse.utils.PermissionsGatedCallback
@@ -40,7 +40,9 @@ import org.lineageos.glimpse.viewmodels.AlbumsViewModel
  */
 class AlbumsFragment : Fragment() {
     // View models
-    private val albumsViewModel: AlbumsViewModel by viewModels { AlbumsViewModel.Factory }
+    private val albumsViewModel: AlbumsViewModel by viewModels {
+        AlbumsViewModel.factory(lifecycleScope)
+    }
 
     // Views
     private val albumsRecyclerView by getViewProperty<RecyclerView>(R.id.albumsRecyclerView)
